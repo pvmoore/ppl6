@@ -1,0 +1,108 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "ast",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings-double"
+		},
+		{
+			"include": "#strings-single"
+		},
+		{
+			"include" : "#number-literals"
+		}
+	],
+	"repository": {
+
+		"keywords": {
+			"patterns": [
+				{
+					"name": "entity.name.tag.ast",
+					"match": "\\b(not comptime|comptime|type|kind|target|to|nid|refs|subtype|length|line|location)(\\*+|\\b)"
+				},
+				{
+					"name": "keyword.control.ast",
+					"match": "\\b(var|const|if|while|return|import|assert|not|is|as|and|or|else|break|continue|loop|select)\\b"
+				},
+				{
+					"name": "storage.type.ast",
+					"match": "\\b(ref|bool|byte|ubyte|short|ushort|int|uint|long|ulong|float|half|double|void|struct|class|enum|fn)(\\*+|\\b)"
+				},
+				{
+					"name": "storage.modifier.public.ast",
+					"match": "\\b(AddressOf|As|Binary|BuiltinFunc|Dot|EnumMember|EnumMemberValue|ExpressionRef|Call|Cast|Composite|Constructor|Identifier|If|Index|Initialiser|Is|Lambda|Parameters|ModuleAlias|Null|Number|Parens|Loop|LiteralFunction|LiteralString|LiteralNull|LiteralNumber|Select|TypeExpr|Unary|ValueOf)(\\*+|\\b)"
+				},
+				{
+					"name": "keyword.control.ast",
+					"match": "\\b(Alias|Assert|Break|Case|Continue|Enum|Function|FunctionType|Import|Module|Return|Struct|Variable)(\\*+|\\b)"
+				},
+				{
+					"name" : "support.function.ast",
+					"match": "\\b(pub|extern|static|returns)\\b"
+				},
+				{
+					"name" : "support.function.ast",
+					"match" : "@[_\\w]+\\b"
+				},
+				{
+					"name" : "entity.name.tag.ast",
+					"match" : "\\[\\[.*\\]\\]"
+				},
+				{
+					"name": "constant.numeric",
+					"match": "\\b(true|false|null)(\\**|\\b)"
+				},
+				{
+					"name": "entity.other.this.ast",
+					"match": "\\b(this)(\\**|\\b)"
+				}
+			]
+		},
+		"strings-double": {
+			"name": "string.quoted.double.ast",
+			"begin": "'",
+			"end": "'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.ast",
+					"match": "\\\\."
+				}
+			]
+		},
+		"strings-single": {
+			"name": "string.quoted.single.ast",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.ast",
+					"match": "\\\\."
+				}
+			]
+		},
+		"number-literals": {
+			"patterns": [
+				{
+					"name"  : "constant.numeric.float",
+					"match" : "\\b([\\d_]+\\.[\\d_]+(f|d|h)?)\\b"
+				},
+				{
+					"name"  : "constant.numeric",
+					"match" : "\\b[\\d_]+\\b"
+				},
+				{
+					"name"  : "constant.numeric.binary",
+					"match" : "\\b0b[0-1_]+\\b"
+				},
+				{
+					"name"  : "constant.numeric.hex",
+					"match" : "\\b0x[\\d_a-fA-F]+\\b"
+				}
+			]
+		}
+	},
+	"scopeName": "source.ast"
+}

@@ -1,0 +1,32 @@
+general:
+  main-file: "test.p6"
+  target-path: ".target/"
+  target-exe: "test.exe"
+  build: release
+
+# ignored for now
+release:
+  opt-level: 3
+
+# ignored for now
+debug:
+
+linker:
+  enable: true
+  subsystem: console
+#subsystem: windows
+
+src-dependencies:
+  windows:
+    directory: "./libs"
+  glfw:
+    directory: "./libs"
+  vulkan:
+    directory: "./libs"
+
+lib-dependencies:
+  glfw:
+    debug-libs:
+      - "./libs/glfw/glfw3dll.lib"
+    release-libs:
+      - "./libs/glfw/glfw3dll.lib"

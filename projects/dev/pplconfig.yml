@@ -1,0 +1,17 @@
+general:
+  main-file: "test.p6"
+  target-path: ".target/"
+  target-exe: "test.exe"
+  build: release
+
+# ignored for now
+release:
+  opt-level: 3
+
+# ignored for now
+debug:
+
+linker:
+  enable: true
+  subsystem: console
+

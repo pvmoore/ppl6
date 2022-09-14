@@ -1,0 +1,187 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "ppl6",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#function-calls"
+		},
+		{
+			"include" : "#line-comment"
+		},
+		{
+			"include" : "#block-comment"
+		},
+		{
+			"include" : "#named_arguments"
+		},
+		{
+			"include" : "#number-literals"
+		},
+		{
+			"include" : "#user-defined-type"
+		},
+		{
+			"include" : "#terminator"
+		},
+		{
+			"include" : "#curly-brackets"
+		},
+		{
+			"include" : "#pipes"
+		}
+	],
+	"repository": {
+
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.ppl6",
+					"match": "\\b(const|if|alias|while|return|import|assert|not|is|as|and|or|else|break|continue|loop|select)\\b"
+				},
+				{
+					"name": "storage.type.ppl6",
+					"match": "\\b(bool|byte|short|int|long|float|half|double|void|struct|class|enum|fn)(\\*+|\\b)"
+				},
+				{
+					"name": "storage.modifier.public.ppl6",
+					"match": "\\b(pub|extern)(\\*+|\\b)"
+				},
+				{
+					"name" : "storage.modifier.ppl6",
+					"match": "\\b(static)\\b"
+				},
+				{
+					"name" : "support.function.ppl6",
+					"match" : "@[_\\w]+\\b"
+				},
+				{
+					"name" : "entity.name.tag.ppl6",
+					"match" : "\\[\\[.*\\]\\]"
+				},
+				{
+					"name" : "entity.name.tag.ppl6",
+					"match" : "\\b\\[.*\\]\\b"
+				},
+				{
+					"name": "constant.numeric",
+					"match": "\\b(true|false|null)\\b"
+				},
+				{
+					"name": "entity.other.this.ppl6",
+					"match": "\\b(this)(\\**|\\b)"
+				}
+			]
+		},
+		"user-defined-type": {
+			"patterns": [
+				{
+					"match": "\\b([A-Z][_a-zA-Z0-9]+(\\*+|\\b|\\())",
+					"captures": {
+						"1" : {
+							"name" : "storage.type.user-defined.ppl6"
+						}
+					}
+				}
+			]
+		},
+		"function-calls": {
+			"patterns": [
+				{
+					"match": "\\b([_a-z][_a-zA-Z0-9]*)\\(",
+					"captures": {
+						"1" : {
+							"name" : "entity.name.function"
+						}
+					}
+				},
+				{
+					"match": "\\b(operator(\\[\\]|==|!=))\\(",
+					"captures": {
+						"1" : {
+							"name" : "entity.name.function"
+						}
+					}
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.ppl6",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.ppl6",
+					"match": "\\\\."
+				}
+			]
+		},
+		"number-literals": {
+			"patterns": [
+				{
+					"name"  : "constant.numeric.float",
+					"match" : "([\\d_]+\\.[\\d_]+(f|d|h)?)"
+				},
+				{
+					"name"  : "constant.numeric",
+					"match" : "\\b[\\d_]+\\b"
+				},
+				{
+					"name"  : "constant.numeric.binary",
+					"match" : "\\b0b[0-1_]+\\b"
+				},
+				{
+					"name"  : "constant.numeric.hex",
+					"match" : "\\b0x[\\d_a-fA-F]+\\b"
+				}
+			]
+		},
+		"line-comment": {
+			"patterns": [{
+				"match": "//.*$",
+				"name": "comment.line.ppl6"
+			}]
+		},
+		"block-comment": {
+			"patterns": [{
+				"begin": "/\\*",
+				"end": "\\*/",
+				"name": "comment.block.ppl6"
+			}]
+		},
+		"terminator": {
+			"patterns": [{
+				"name"  : "punctuation.terminator",
+				"match" : ";"
+			}]
+		},
+		"curly-brackets": {
+			"patterns": [{
+				"name"  : "punctuation.curly-brackets",
+				"match" : "(\\{|\\})"
+			}]
+		},
+		"pipes": {
+			"patterns": [{
+				"name"  : "punctuation.pipe",
+				"match" : "\\|"
+			}]
+		},
+		"named_arguments": {
+			"patterns": [{
+				"match" : "[^\\.]([a-zA-Z_][a-zA-Z0-9_]*\\s*):(?!=)",
+				"captures": {
+					"1" : {
+						"name" : "entity.name.tag.ppl6"
+					}
+				}
+			}]
+		}
+	},
+	"scopeName": "source.ppl6"
+}

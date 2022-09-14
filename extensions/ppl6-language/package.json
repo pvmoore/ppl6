@@ -1,0 +1,34 @@
+{
+    "name": "ppl6-lang",
+    "displayName": "PPL6",
+    "description": "PPL6 language syntax highlighting support",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.38.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "ppl6",
+                "aliases": [
+                    "PPL6",
+                    "ppl6"
+                ],
+                "extensions": [
+                    ".p6"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "ppl6",
+                "scopeName": "source.ppl6",
+                "path": "./syntaxes/ppl6.tmLanguage.json"
+            }
+        ]
+    }
+}

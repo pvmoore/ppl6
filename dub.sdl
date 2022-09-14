@@ -1,0 +1,44 @@
+name "ppl6"
+platforms "windows"
+
+buildType "debug" {
+	buildOptions "debugMode" "debugInfo" "alwaysStackFrame" "stackStomping" "warningsAsErrors"
+}
+buildType "release" {
+    dflags "-O5" platform="ldc"
+    dflags "-mcpu=haswell" platform="ldc"
+    dflags "-mattr=+fma,+avx2" platform="ldc"
+    #dflags "-expensive-combines" platform="ldc"
+    #dflags "-enable-cross-module-inlining" platform="ldc"
+    dflags "-cache=.dub/cache" platform="ldc"
+    dflags "-ffast-math" platform="ldc"
+
+	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
+}
+
+configuration "test" {
+	mainSourceFile "src/main.d"
+	excludedSourceFiles "src/bench.d" "src/server.d"
+
+	targetType "executable"
+	targetName "ppl"
+}
+configuration "server" {
+	mainSourceFile "src/server.d"
+	excludedSourceFiles "src/main.d" "src/bench.d"
+
+	targetType "executable"
+	targetName "server"
+}
+configuration "bench" {
+	mainSourceFile "src/bench.d"
+	excludedSourceFiles "src/main.d" "src/server.d"
+
+	targetType "executable"
+	targetName "bench"
+}
+
+dependency "common" version="~master"
+dependency "llvm" version="~master"
+dependency "fswatch" version="~>0.5.0"
+dependency "dyaml" version="~>0.9.1"

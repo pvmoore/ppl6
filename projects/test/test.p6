@@ -1,0 +1,345 @@
+
+/*
+main {
+    import test_implicit_template_funcs
+    testImplicitTemplateFunctions()
+}
+*/
+
+s = "hello"
+
+import imports::imports             // Bat, Cat, Dog, IntPtrPtr, Wolf, importedFunc()
+import nodes::literals
+import nodes::is
+import test_arrays
+import misc::test_constant_folding
+
+alias AA = int
+alias BB = AA*     // int*
+alias CC = BB      // int*
+alias DD = CC*     // int**
+DD dd              // int**
+alias EE = IntPtrPtr*
+EE ee              // int***
+
+// declare for later
+struct Gold
+struct Gold // ok
+
+struct Silver(Gold* gold)
+struct Gold( // definition
+    Silver* silver
+)
+Gold gold
+
+// Module init function
+fn new() {
+    // All module variable initialisation
+    // code will be put in here
+    boop += 7
+}
+
+struct Goal(int scorer)
+
+struct Animal(
+    int age,
+    int[4] s,
+    Goal g)
+{
+    struct(int,bool) anon
+
+    pub fn bark() { // Animal* this
+        assert true
+    }
+}
+alias AnimalPtr = Animal*
+alias IntPtr    = int*
+
+fn dothings(int a, Animal animal) {
+    int local
+    return animal
+}
+
+int boop = 1
+
+alias Unref = int
+Unref unr = 77
+
+fn unreferencedFunc() {
+    struct(bool,bool) a
+}
+
+struct Thingy(pub int a) {
+    pub fn(return int) b = ||{ return 1 }
+    //new = { Thingy* this }    // implicit
+}
+
+fn myfunc(bool flag) {
+    return flag
+}
+
+fn someArrays() {
+    int[5] array
+    a2 = @arrayOf(int, 1,2)  // int[2]
+}
+
+struct Array <A,B>(
+    A a,
+    B b
+)
+
+fn noofoo(int a) {
+    b = a
+    return b
+}
+fn tempfoo<T>(T a, int b) {
+
+}
+
+struct wagahagahgahg(int a) { fn sdasdasdasd() {} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct Vector
+
+fn testing() {
+
+    struct Blue(int a) {
+        fn foo() { return "BANANAS" }
+    }
+    Blue* obj = null
+    //value = obj.a
+    //print(obj.foo())
+
+    import test_classes
+
+    testClasses()
+
+    const a = Vector()
+
+	loop(i = 0; i<10; i+=1) {
+
+	}
+
+    const multi = """
+hello
+"""
+
+}
+struct Vector(pub float x, pub float y, pub float z) {
+    fn dot() { return this.x*this.x + this.y*this.y + this.z*this.z}
+    fn setX(float x) { this.x := x }
+    pub fn setY(float y) {}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//pub WinMain {
+pub fn main() {
+
+    testing()
+
+    fn(return int) fptr       = || { return 1 }
+    fn(int return void) fptr2 = |int a| {}
+
+    const noobar = ||{
+        return 1
+    }
+
+
+    noofoo(1)
+    noobar()
+    tempfoo(true, 1)
+
+    ////////
+
+
+
+    import misc::misc;              testMisc()
+    import misc::builtin_funcs;     testBuiltinFuncs()
+    import nodes::select;           testSelect()
+    import functions::closures;     testClosures()
+    import test_enum;               testEnum()
+    import misc::attributes;        testAttributes()
+    import misc::ptr_arithmetic;    testPtrArithmetic()
+    import misc::escape_analysis;   testEscapees()
+    import misc::control_flow_analysis; controlFlowAnalysis()
+
+    import texpr = test_expressions;    texpr.testExpressions()
+
+    import core_::sequences;    testSequences()
+
+    import test_optional; testOptional()
+
+    testLiterals()
+    testConstantFolding()
+    testArrays()
+
+    const testGlobals = || {
+        assert @typeOf(dd) is int**
+        assert @typeOf(ee) is int***
+    }
+    const test0 = || {
+        int a1 = 3
+        int b1 = a1 - 2
+
+        myfunc(true)
+
+        struct(int, float) anon
+
+        Animal* animal
+        Animal** animal2
+        AnimalPtr animalPtr
+        IntPtr ip
+
+        animal3 = Animal()
+        animal3.bark()
+        dothings(0, animal3)
+
+        Thingy thingy = Thingy()
+        thingyA = thingy.a
+
+        someArrays()
+    }
+    const test1 = ||{
+        fn(return int) b = ||{ return 1 }
+    }
+    const test2 = ||{
+        fn(return struct(int a,int b)) f = ||{
+            return @structOf(1,2)
+        }
+
+        r = f()
+        struct(int a, float b) r2 = r as struct(int,float)
+
+        a = r.a
+        b = r.b
+        assert a==1
+        assert b==2
+
+        assert r2.a==1
+
+        // reinterpret cast int to float won't be 2
+        //assert r2.b==2
+    }
+    const test3 = || {
+        struct Listy <T>(T length)
+
+        Listy<int> list = Listy<int>()
+        Array<int,float> array
+        Rose<int> rose
+        ANiceRose anicerose
+        Listy<BlueRose> blueList
+        Listy<Listy<int>> listoflist
+    }
+    const test4 = || {
+        //float2 v2
+        //float3 v3
+        //float4 v4
+        //float8 v8
+    }
+    const testInnerImport = || {
+        import imports::imports3
+
+        assert 77 == i3func()
+        I3Object obj = I3Object()
+    }
+
+    testGlobals()
+    test0()
+    test1()
+    test2()
+    test3()
+    test4()
+    testInnerImport()
+
+    import access::access
+    testAccess()
+
+    testModules()
+    testStatements()
+    testExpressions()
+    testFunctions()
+    testStructures()
+    testTemplates()
+    testCore()
+    testIs()
+
+    GC.dump()
+}
+bool yop
+
+fn testModules() {
+    import misc::unreferenced_module
+
+    testImports()
+
+    importedFunc()
+
+    Cat cat             // from test_imports
+    Dog dog1 = Dog()
+    dogsAge = dog1.age + 1
+
+    Dog* dog2 = null     // from test_imports
+    dog2 := &dog1
+    dog2 := null
+
+    dog3 = Dog*()
+
+    alias GreyWolf = Wolf
+    GreyWolf wolf
+
+    struct(int, Bat berty) bertyStruct
+}
+fn testStatements() {
+    import l = nodes::loop,
+           v = nodes::variable
+
+    l.testLoop()
+    v.testVariables()
+}
+fn testExpressions() {
+    import nodes::as,
+           nodes::if,
+           tuples::literal_tuple,
+           tuples::tuple_decl
+
+    testAs()
+    testIf()
+    testLiteralTuple()
+    testTupleDecl()
+}
+fn testFunctions() {
+    import functions::calls
+
+    testCalls()
+}
+fn testStructures() {
+    import structs::structs,
+           structs::constructors,
+           structs::statics,
+           structs::operator_overloading
+
+    testStructs()
+    testConstructors()
+    testStatics()
+    testOperatorOverloading()
+}
+fn testTemplates() {
+    import templates::template_functions,
+           templates::template_structs,
+           templates::implicit_template_funcs
+
+    testTemplateStructs()
+    testTemplateFunctions()
+    testImplicitTemplateFunctions()
+}
+fn testCore() {
+    import core_::console,
+           core_::list,
+           core_::string
+
+    testConsole()
+    testList()
+    testString()
+}
+

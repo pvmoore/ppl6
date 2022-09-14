@@ -1,0 +1,195 @@
+@module_priority(-900_000)
+
+byte* EMPTY_CSTR = GC.calloc(1) as byte*
+
+//=================================================================================================
+// Standard or small string
+//=================================================================================================
+pub struct string( // 16 bytes
+    byte* basePtr,
+    int offset,
+    pub int length)  // public property - readable from outside the struct but not modifiable
+{
+    /**
+     *  string(p, 0, 10)
+     */
+    pub fn new(byte* ptr, int offset, int len) {
+        this.basePtr := ptr
+        this.offset  := offset
+        this.length  := len
+    }
+    /**
+     *  string.of(134)
+     */
+    pub static fn of(int v) {
+        if(v==0) return "0"
+
+        list = List<byte>()
+        if(v<0) {
+            list.add('-' as byte)
+            v := -v
+        }
+        loop(; v>0; v/=10) {
+            mod = v%10
+            list.add((mod + '0') as byte)
+        }
+
+        return string(ptr: list.ptr(), offset: 0, len: list.length)
+    }
+    pub fn ptr()     { return this.basePtr + this.offset }
+    pub fn isEmpty() { return this.length==0 }
+    pub fn first()   { assert not this.isEmpty(); return this.ptr()[0] }
+    pub fn last()    { assert not this.isEmpty(); return this.ptr()[this.length-1] }
+
+    pub fn cstr() {
+        if(this.length==0) return EMPTY_CSTR
+
+        // todo - this might seg fault
+        if(this.ptr()[this.length]==0) return this.ptr()
+
+        copy = GC.alloc(this.length+1) as byte*
+        memcpy(copy, this.ptr(), this.length)
+        copy[this.length] := 0 as byte
+
+        return copy
+    }
+
+    pub fn operator[](int index) { return this.ptr()[index] }
+
+    pub fn operator==(string s) {
+        return this.length==s.length and memcmp(this.ptr(), s.ptr(), this.length) == 0
+    }
+    /**
+     *  Return index of _ch_ or -1 if not found
+     */
+    pub fn indexOf(int ch) {
+        const p = memchr(this.ptr(), ch, this.length)
+        return if(p) (p-this.ptr()) as int else -1
+    }
+    /**
+     *  Return index of _s_ or -1 if not found
+     */
+    pub fn indexOf(string s) {
+        //ret indexOf(s, 0)  // fixme
+        return this.indexOf(s, 0)
+    }
+    pub fn indexOf(int ch, int startIndex) {
+        if(startIndex<0 or startIndex>=this.length) return -1
+
+        const p = memchr(this.basePtr+this.offset+startIndex, ch, this.length-startIndex)
+        return if(p) (p-this.ptr()) as int else -1
+    }
+    pub fn indexOf(string s, int startIndex) {
+        if(s.isEmpty()) return -1
+        if(startIndex<0) return -1
+
+        const end = this.length-s.length
+        if(end<0) return -1
+
+        loop(int pos = startIndex; pos<=end; pos += 1) {
+            pos := this.indexOf(s.first(), pos)
+
+            select(pos) {
+                -1   : break
+                else : {
+                    if(memcmp(this.ptr()+pos, s.ptr(), s.length)==0) return pos
+                }
+            }
+        }
+        return -1
+    }
+    pub fn startsWith(int ch) {
+        return this.length>0 and this.ptr()[0]==ch
+    }
+    pub fn startsWith(string s) {
+        return this.length >= s.length and memcmp(this.ptr(), s.ptr(), s.length) == 0
+    }
+    pub fn endsWith(int ch) {
+        return this.length>0 and this.ptr()[this.length-1]==ch
+    }
+    pub fn endsWith(string s) {
+        if(s.length==0) return false
+        const off = this.length-s.length;
+        return this.length >= s.length and memcmp(this.ptr()+off, s.ptr(), s.length) == 0
+    }
+    pub fn contains(int ch) {
+        return this.indexOf(ch) != -1
+    }
+    pub fn contains(string s) {
+        return this.indexOf(s) != -1
+    }
+    /**
+     * returns left trimmed string view
+     * Note: Requires testing
+     */
+    pub fn trimLeft() {
+        if(this.length==0) return *this
+        const p = this.ptr()
+
+        i = 0;
+        loop(; i<this.length and p[i] < 33; i+=1) {}
+        if(i==0) return *this
+
+        return string(ptr: this.basePtr, offset: this.offset + i, len: this.length - i)
+    }
+    /**
+     * returns right trimmed string view
+     * Note: Requires testing
+     */
+    pub fn trimRight() {
+        if(this.length==0) return *this
+        const p = this.ptr()
+
+        i = this.length-1
+        loop(; i>=0 and p[i] < 33; i-=1) {}
+        if(i==this.length-1) return *this
+
+        return string(ptr: this.basePtr, offset: this.offset, len: i+1)
+    }
+    pub fn trim() {
+        // todo
+        assert false
+    }
+    pub fn toBool() {
+        if(this.length != 4) return false
+        const p = this.ptr()
+
+        return  (p[0]=='t' or p[0]=='T') and
+                (p[1]=='r' or p[1]=='R') and
+                (p[2]=='u' or p[2]=='U') and
+                (p[3]=='e' or p[3]=='E')
+    }
+    pub fn toInt(int radix, int default) {
+        // Only decimal is supported
+        assert radix == 10
+
+        value = 0
+        mul   = 1
+
+        loop(i = this.length-1; i>=0; i -= 1) {
+            ch = this[i] - '0'
+
+            if(ch<0 or ch>9) return default
+            value += ch*mul
+            mul   *= 10
+        }
+        return value
+    }
+    pub fn toFloat(float default) {
+        // todo
+        assert false
+    }
+}
+//=================================================================================================
+// Large string
+//=================================================================================================
+pub struct lstring( // 24 bytes
+    byte* basePtr,
+    long offset,
+    pub long length
+)
+
+fn new() {
+    assert @sizeOf(string)==16
+    assert @sizeOf(lstring)==24
+}

@@ -1,0 +1,33 @@
+
+pub fn testOptional() {
+
+    Optional<int> opt
+    assert not opt.exists   // set to non existing by default
+    assert opt.get() == 0   // default value of int
+
+    const opt1 = Optional<int>()
+    assert not opt1.exists
+
+    const opt2 = Optional<int>(3)
+    assert opt2.exists
+    assert opt2.get() == 3
+
+    opt2.then |v| { println("opt2 value exists") }
+        .then |v| { println("hello") }
+        .else || { println("not here") }
+
+    // fixme
+    //opt2.then |int v| { println("opt2 value exists") }
+
+
+    // fixme - missing template parameter
+    Optional opt4
+
+    opt3 = Optional<float>*()
+    assert not opt3.exists
+    assert opt3.get() == 0.0
+
+    opt3.else || { println("opt3 value does not exist") }
+
+    assert opt3.getOr(7) == 7
+}
