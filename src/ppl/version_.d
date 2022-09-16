@@ -2,9 +2,11 @@ module ppl.version_;
 
 public:
 
-enum VERSION = "6.4.0";
+enum VERSION = "6.5.0";
 
 /*
+
+6.5.0 -
 
 6.4.0 - Use Filepath, Filename and Directory in Config
         Added requirement that constructor calls with more than one argument must use named arguments
@@ -32,6 +34,8 @@ enum VERSION = "6.4.0";
   TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO - TODO
 
 ░░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓
+
+    -- Use github wiki
 
     -- Can't make any further progress when the arg name is wrong but the function can be found
        We need a better error message for this:
