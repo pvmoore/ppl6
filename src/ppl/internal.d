@@ -154,9 +154,10 @@ import ppl._3_resolve.ResolveUnary;
 import ppl._3_resolve.ResolveVariable;
 
 import ppl._3_resolve.misc.Callable;
-import ppl._3_resolve.misc.FindFunction;
-import ppl._3_resolve.misc.FindImport;
+import ppl._3_resolve.misc.CallableSet;
 import ppl._3_resolve.misc.CollectOverloads;
+import ppl._3_resolve.misc.FindCallTarget;
+import ppl._3_resolve.misc.FindImport;
 import ppl._3_resolve.misc.FindType;
 import ppl._3_resolve.misc.FindIdentifierTarget;
 

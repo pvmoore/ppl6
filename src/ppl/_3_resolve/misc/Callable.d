@@ -32,6 +32,31 @@ struct Callable {
     Module getModule()         { return func ? func.getModule() : var.getModule(); }
     Struct getStruct()         { return func ? func.getStruct() : var.getStruct(); }
 
+    /**
+     *  If the Call has named params then return the arg types of the Call in
+     *  the same order as the param types of this Callable.
+     *  If the names do not match then return null.
+     *  Otherwise just return the call arg types which are already in order
+     */
+    Type[] getCallArgTypesInOrder(Call call) {
+        import common : indexOf;
+        if(call.numArgs()==0) {
+            return null;
+        } else if(call.paramNames.length > 0) {
+            string[] names = paramNames();
+            Type[] callArgTypes = call.argTypes();
+            Type[] inOrder = new Type[callArgTypes.length];
+            foreach(i, name; call.paramNames) {
+                int index = names.indexOf(name);
+                if(index==-1) return null;
+
+                inOrder[index] = callArgTypes[i];
+            }
+            return inOrder;
+        }
+        return call.argTypes();
+    }
+
     size_t toHash() const @safe pure nothrow {
         assert(id!=0);
         return id;

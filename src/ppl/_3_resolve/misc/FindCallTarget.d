@@ -1,11 +1,12 @@
-module ppl._3_resolve.misc.FindFunction;
+module ppl._3_resolve.misc.FindCallTarget;
 
 import ppl.internal;
 import common : contains;
 
 __gshared bool doChat = false;
+enum NEW = false;
 
-final class FindFunction {
+final class FindCallTarget {
 private:
     Module module_;
     CollectOverloads collector;
@@ -15,6 +16,8 @@ private:
 
     /// List of Callable ruled out based on name match failure
     Callable[] filteredOutByParamNames;
+
+    CallableSet callableSet;
 public:
     this(Module module_) {
         this.module_           = module_;
@@ -22,6 +25,7 @@ public:
         this.implicitTemplates = new ImplicitTemplates(module_);
         this.overloads         = new DynamicArray!Callable;
         this.funcTemplates     = new DynamicArray!Function;
+        this.callableSet       = new CallableSet;
     }
     /// Assume:
     ///     call.argTypes may not yet be known
@@ -38,7 +42,8 @@ public:
         Struct ns = call.isStartOfChain() ? call.getAncestor!Struct : null;
 
         if(call.isTemplated() && !call.name.contains("<")) {
-            /// We can't do anything until the template types are known
+            /// This is  call to a template function.
+            /// We can't do anything until the template types are known and added to the name
             if(!call.templateTypes.areKnown()) {
                 return CALLABLE_NOT_READY;
             }
@@ -382,10 +387,8 @@ private:
                 funcTemplates.add(callable.func);
                 continue;
             }
-            if(!callable.getType().isFunction()) {
-                overloads.remove(callable);
-                continue;
-            }
+
+            assert(callable.getType().isFunction());
 
             Type[] params  = callable.paramTypes();
             Type[] args    = call.argTypes();
@@ -611,9 +614,9 @@ private:
     /// If we can resolve any function ptr call args then we might
     /// make some progress.
     ///
-    /// eg. call args = (int, {UNKNOWN->void})
-    /// nameMatches   = (int, {void->void})
-    ///                 (int, {int->void})      // <-- match
+    /// eg. call args = (int, fn(UNKNOWN return void))
+    /// nameMatches   = (int, fn(void return void))
+    ///                 (int, fn(int return void))      // <-- match
     ///
     Callable findImplicitMatchWithUnknownArgs(Call call) {
         //if(call.name.indexOf("each")!=-1) dd("findImplicitMatchWithUnknownArgs", call);

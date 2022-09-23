@@ -18,13 +18,13 @@ private:
     Module module_;
     ResolveModule resolver;
     FoldModule folder;
-    FindFunction findFunction;
+    FindCallTarget findCallTarget;
 public:
     this(ResolveModule resolver) {
-        this.resolver     = resolver;
-        this.module_      = resolver.module_;
-        this.folder       = module_.folder;
-    this.findFunction = new FindFunction(module_);
+        this.resolver       = resolver;
+        this.module_        = resolver.module_;
+        this.folder         = module_.folder;
+        this.findCallTarget = new FindCallTarget(module_);
     }
     void resolve(Call n) {
 
@@ -52,7 +52,7 @@ public:
                     return;
                 }
 
-                auto callable = findFunction.standardFind(n);
+                auto callable = findCallTarget.standardFind(n);
                 if(callable.resultReady()) {
                     /// If we get here then we have 1 good match
                     if(callable.isFunction()) {
@@ -67,7 +67,7 @@ public:
                 ///
                 auto modAlias = prev.as!ModuleAlias;
 
-                auto callable = findFunction.standardFind(n, modAlias);
+                auto callable = findCallTarget.standardFind(n, modAlias);
                 if(callable.resultReady()) {
                     /// If we get here then we have 1 good match
                     assert(callable.isFunction());
@@ -104,7 +104,7 @@ public:
                 ////////////////////////
 
                 if(isStaticAccess) {
-                    auto callable = findFunction.structFind(n, ns, true);
+                    auto callable = findCallTarget.structFind(n, ns, true);
                     if(callable.resultReady()) {
                         /// If we get here then we have 1 good match
                         if(callable.isFunction()) {
@@ -154,7 +154,7 @@ public:
                         n.implicitThisArgAdded = true;
                     }
 
-                    auto callable = findFunction.structFind(n, ns, false);
+                    auto callable = findCallTarget.structFind(n, ns, false);
 
                     if(callable.resultReady()) {
                         /// If we get here then we have 1 good match

@@ -10,7 +10,8 @@ pub fn testMisc() {
     }
 
 
-    Peter p = Peter(b:0, c:0)
+    // One of the param names is wrong
+    //Peter p = Peter(b:0, c:0)
 
 
 
