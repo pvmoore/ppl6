@@ -29,5 +29,5 @@ pub fn testOptional() {
 
     opt3.else || { println("opt3 value does not exist") }
 
-    assert opt3.getOr(7) == 7
+    assert opt3.getOr(7.0) == 7.0
 }

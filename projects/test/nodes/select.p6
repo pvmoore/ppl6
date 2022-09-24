@@ -36,7 +36,7 @@ pub fn testSelect() {
          }
          assert r1 == 11
 
-         const r2 = select(float f = 0.1; f < 1) {
+         const r2 = select(float f = 0.1; f < 1.0) {
             true: { 1 }
             else: { 2 }
          }

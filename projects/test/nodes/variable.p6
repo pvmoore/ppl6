@@ -61,8 +61,8 @@ pub fn testVariables() {
         struct A(pub float a = 9)
         A a
         A a1   = A()
-        A* a2  = &a1    ; assert @typeOf(a2) is A*   ; assert (*a2).a == 9
-        A** a3 = &a2    ; assert @typeOf(a3) is A**  ; assert (**a3).a == 9
+        A* a2  = &a1    ; assert @typeOf(a2) is A*   ; assert (*a2).a == 9.0
+        A** a3 = &a2    ; assert @typeOf(a3) is A**  ; assert (**a3).a == 9.0
     }
     const arrays = || {
         int[1] a
@@ -73,9 +73,9 @@ pub fn testVariables() {
 
         int[3] d = @arrayOf(int, 1,2,3)   ; assert @typeOf(d) is int[3]
 
-        float[2] e   = @arrayOf(float, 5,7)
-        float[2]* e1 = &e       ; assert @typeOf(e1) is float[2]*    ; assert (*e1)[0]==5
-        const e2     = &e1      ; assert @typeOf(e2) is float[2]**   ; assert (**e2)[0]==5
+        float[2] e   = @arrayOf(float, 5.0, 7.0)
+        float[2]* e1 = &e       ; assert @typeOf(e1) is float[2]*    ; assert (*e1)[0]==5.0
+        const e2     = &e1      ; assert @typeOf(e2) is float[2]**   ; assert (**e2)[0]==5.0
     }
     declarations()
     initialisations()
@@ -101,7 +101,7 @@ fn declarations() {
     c1 = 1 as int   ; assert @typeOf(c1) is int; assert c1 == 1
     d1 = 1 as long  ; assert @typeOf(d1) is long; assert d1 == 1
 
-    e1 = 1 as float ; assert @typeOf(e1) is float; assert e1 == 1
+    e1 = 1 as float ; assert @typeOf(e1) is float; assert e1 == 1.0
     f1 = 1 as double; assert @typeOf(f1) is double; assert d1 == 1.0
 }
 fn initialisations() {

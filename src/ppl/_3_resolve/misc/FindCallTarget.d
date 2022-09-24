@@ -41,6 +41,8 @@ public:
 
         Struct ns = call.isStartOfChain() ? call.getAncestor!Struct : null;
 
+        /// If template types have been specified and the name has not been manged yet
+        /// then we need to mangle the name with the template types and extract the template
         if(call.isTemplated() && !call.name.contains("<")) {
             /// This is  call to a template function.
             /// We can't do anything until the template types are known and added to the name
@@ -67,96 +69,110 @@ public:
 
         chat("looking for %s, from line %s", call.name, call.line()+1);
 
-        if(collector.collect(call, modAlias, overloads)) {
-
-            int numRemoved = removeInvisible();
-
-            if(doChat) {
-                chat("  overloads = %s, (%s invisible)", overloads.length, numRemoved);
-                foreach(o; overloads) chat("   %s", o);
-            }
-
-            if(overloads.length==1 && overloads[0].isTemplateBlueprint()) {
-                /// If we get here then we have a possible template match but
-                /// not enough information to extract it
-            }
-
-            if(overloads.length==1 && !overloads[0].isTemplateBlueprint()) {
-
-                auto r = overloads[0];
-
-                //if(call.numArgs==r.numParams &&
-                //   call.argTypes.areKnown &&
-                //  !call.argTypes.canImplicitlyCastTo(r.paramTypes))
-                //{
-                //    /// Ok we have enough info to know this won't work
-                //
-                //
-                //}
-
-                /// Return this result as it's the only one and check it later
-                /// to make sure the types match
-
-                return r;
-            }
-
-            /// From this point onwards we need the resolved types
-            if(!call.argTypes.areKnown()) return CALLABLE_NOT_READY;
-
-            chat("  before filtering (%s overloads)", overloads.length);
-            filterOverloads(call);
-
-            if(doChat) {
-                chat("  after filtering (%s overloads)", overloads.length);
-                foreach(o; overloads) chat("   %s", o);
-            }
-
-            if(overloads.length==0) {
-
-                if(funcTemplates.length > 0) {
-
-                    chat("Looking for an implicit template");
-                    /// There is a template with the same name. Try that
-                    if(implicitTemplates.find(ns, call, funcTemplates)) {
-
-                        chat("  Found an implicit template match");
-                        /// If we get here then we found a match.
-                        /// call.templateTypes have been set
-                        return CALLABLE_NOT_READY;
-                    }
-                    chat("  No implicit template match");
-                }
-
-                string msg;
-                if(call.paramNames.length>0) {
-                    auto buf = new StringBuffer;
-                    foreach(i, n; call.paramNames) {
-                        if(i>0) buf.add(", ");
-                        buf.add(n).add("=").add("%s".format(call.argTypes()[i]));
-                    }
-                    msg = "Function %s(%s) not found".format(call.name, buf.toString());
-                } else {
-                    msg = "Function %s(%s) not found".format(call.name, call.argTypes().toString());
-                }
-                chat("%s", msg);
-                module_.addError(call, msg, true);
-                return CALLABLE_NOT_READY;
-            }
-            if(overloads.length > 1) {
-                module_.buildState.addError(new AmbiguousCall(module_, call, overloads.values), true);
-                return CALLABLE_NOT_READY;
-            }
-
-            assert(overloads.length==1);
-
-            /// Add the function to the resolution set
-            if(overloads[0].isFunction()) {
-                module_.buildState.moduleRequired(overloads[0].func.getModule().canonicalName);
-            }
-
-            return overloads[0];
+        /// Collect all the functions with the correct name
+        if(!collector.collect(call, modAlias, overloads)) {
+            // Some of the targets are not ready yet
+            return CALLABLE_NOT_READY;
         }
-        return CALLABLE_NOT_READY;
+
+        /// If we get here then we have all of the possible targets
+
+        /// Remove the targets that we should not be able to reach
+        int numRemoved = removeInvisible();
+
+        if(doChat) {
+            chat("  overloads = %s, (%s invisible)", overloads.length, numRemoved);
+            foreach(o; overloads) chat("   %s", o);
+        }
+
+        if(overloads.length==1 && overloads[0].isTemplateBlueprint()) {
+            /// If we get here then we have a possible template match but
+            /// not enough information to extract it
+        }
+
+        if(overloads.length==1 && !overloads[0].isTemplateBlueprint()) {
+
+            /// Return this result as it's the only one and check it later
+            /// to make sure the types match
+
+            auto r = overloads[0];
+
+            //if(call.numArgs==r.numParams &&
+            //   call.argTypes.areKnown &&
+            //  !call.argTypes.canImplicitlyCastTo(r.paramTypes))
+            //{
+            //    /// Ok we have enough info to know this won't work
+            //
+            //
+            //}
+
+            return r;
+        }
+
+        /// From this point onwards we need the resolved types
+        if(!call.argTypes.areKnown()) {
+            return CALLABLE_NOT_READY;
+        }
+
+        /// Filter out the targets that do not match the Call arguments
+        chat("  before filtering (%s overloads)", overloads.length);
+        filterOverloads(call);
+
+        if(doChat) {
+            chat("  after filtering (%s overloads)", overloads.length);
+            foreach(o; overloads) chat("   %s", o);
+        }
+
+
+        if(overloads.length==0) {
+            /// There are no remaining targets. Look for a possible template match
+
+            if(funcTemplates.length > 0) {
+
+                chat("Looking for an implicit template");
+                /// There is a template with the same name. Try that
+                if(implicitTemplates.find(ns, call, funcTemplates)) {
+
+                    chat("  Found an implicit template match");
+                    /// If we get here then we found a match.
+                    /// call.templateTypes have been set
+                    return CALLABLE_NOT_READY;
+                }
+                chat("  No implicit template match");
+            }
+
+            string msg;
+            if(call.paramNames.length>0) {
+                auto buf = new StringBuffer;
+                foreach(i, n; call.paramNames) {
+                    if(i>0) buf.add(", ");
+                    buf.add(n).add("=").add("%s".format(call.argTypes()[i]));
+                }
+                msg = "Function %s(%s) not found".format(call.name, buf.toString());
+            } else {
+                msg = "Function %s(%s) not found".format(call.name, call.argTypes().toString());
+            }
+            chat("%s", msg);
+            module_.addError(call, msg, true);
+            return CALLABLE_NOT_READY;
+        }
+
+        /// There is more than one matching target. This is an ambiguous call
+        if(overloads.length > 1) {
+            module_.buildState.addError(new AmbiguousCall(module_, call, overloads.values), true);
+            return CALLABLE_NOT_READY;
+        }
+
+        /// If we get here then we have a single match
+
+        assert(overloads.length==1);
+
+        /// Add the function to the resolution set
+        if(overloads[0].isFunction()) {
+            module_.buildState.moduleRequired(overloads[0].func.getModule().canonicalName);
+        }
+
+        return overloads[0];
     }
     /// Assume:
     ///     Struct is known

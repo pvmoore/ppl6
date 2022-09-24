@@ -8,6 +8,7 @@ enum VERSION = "6.5.0";
 
 6.5.0 - Start refactor of Call resolution.
         Rename FindFunction to FindCallTarget
+        Disallow int->real implicit conversion
 
 6.4.0 - Use Filepath, Filename and Directory in Config
         Added requirement that constructor calls with more than one argument must use named arguments
@@ -36,9 +37,11 @@ enum VERSION = "6.5.0";
 
 ░░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓
 
-    disallow int->real implicit conversion
+
     remove filterpartialmatches. return an ambiguous call error
     use getCallArgTypesInOrder
+
+
 
     -- ExecuteFunction.execute(Function|Lambda)
 

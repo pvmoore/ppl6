@@ -34,7 +34,7 @@ interface Type {
     final bool isInt() const      { return category()==INT; }
     final bool isLong() const     { return category()==LONG; }
     final bool isPtr() const      { return this.isA!Pointer; }
-    final bool isValue() const    { return !isPtr; }
+    final bool isValue() const    { return !isPtr(); }
     final bool isUnknown()        { return !isKnown(); }
     final bool isVoid() const     { return category()==VOID; }
     final bool isBool() const     { return category()==BOOL; }

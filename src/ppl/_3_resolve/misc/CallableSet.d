@@ -42,43 +42,43 @@ public:
      * Return the best matches from the list of partial matches.
      * Assume there are at least two partial matches and no exact matches
      */
-    Callable[] getFilteredPartialMatches() {
-        assert(exactMatches.length == 0);
-        assert(partialMatches.length > 1);
+    // Callable[] getFilteredPartialMatches() {
+    //     assert(exactMatches.length == 0);
+    //     assert(partialMatches.length > 1);
 
-        Callable[] matches;
+    //     Callable[] matches;
 
-        // Keep partial matches where the types exactly match
-        // or they are either both integer or both real.
+    //     // Keep partial matches where the types exactly match
+    //     // or they are either both integer or both real.
 
-        foreach(c; partialMatches) {
-            Type[] callArgTypesInOrder = c.getCallArgTypesInOrder(call);
-            Type[] paramTypes = c.paramTypes();
+    //     foreach(c; partialMatches) {
+    //         Type[] callArgTypesInOrder = c.getCallArgTypesInOrder(call);
+    //         Type[] paramTypes = c.paramTypes();
 
-            foreach(i; 0..paramTypes.length) {
-                Type arg = callArgTypesInOrder[i];
-                Type param = paramTypes[i];
-                bool ok = true;
+    //         foreach(i; 0..paramTypes.length) {
+    //             Type arg = callArgTypesInOrder[i];
+    //             Type param = paramTypes[i];
+    //             bool ok = true;
 
-                if(arg.exactlyMatches(param)) {
-                    /// match
-                } else if(arg.isInteger()==param.isInteger() && arg.category()<param.category()) {
-                    /// integer and arg is smaller than param
-                } else if(arg.isReal()==param.isReal() && arg.category()<param.category()) {
-                    /// real and arg is smaller than param
-                } else {
-                    /// nope
-                    ok = false;
-                }
+    //             if(arg.exactlyMatches(param)) {
+    //                 /// match
+    //             } else if(arg.isInteger()==param.isInteger() && arg.category()<param.category()) {
+    //                 /// integer and arg is smaller than param
+    //             } else if(arg.isReal()==param.isReal() && arg.category()<param.category()) {
+    //                 /// real and arg is smaller than param
+    //             } else {
+    //                 /// nope
+    //                 ok = false;
+    //             }
 
-                if(ok) {
-                    matches ~= c;
-                }
-            }
-        }
+    //             if(ok) {
+    //                 matches ~= c;
+    //             }
+    //         }
+    //     }
 
-        return matches;
-    }
+    //     return matches;
+    // }
     /**
      *  Try to match all Callables against the Call.
      *  Produce a list of possible matches

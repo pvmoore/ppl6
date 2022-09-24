@@ -13,7 +13,7 @@ pub fn testCalls() {
 	assert 2 == b(3 as int) // b(int) exact match
     assert 3 == b(3.1)      // b(float)
     assert 3 == b(p1:3.1)
-    assert 4 == b(1,2)
+    assert 4 == b(1,2.0)
     assert 4 == b(p1:1, p2:3.1)
     assert 4 == b(p2:3.1, p1:1)
     assert 5 == c(7,8)

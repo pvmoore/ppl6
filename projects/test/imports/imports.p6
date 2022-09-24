@@ -42,7 +42,7 @@ pub fn testImports() {
 	//const rabbitD = imp.Rabbit.d		// rabbit.d is private static
 
 	br1 = imp.Badger<int>.b   == 80
-	br2 = imp.Badger<float>.b == 81
+	br2 = imp.Badger<float>.b == 81.0
 
 	imp.Skunk<imp.Rabbit*> skunkRabbit
 	imp.Skunk<imp.Rabbit*>* skunkRabbit2

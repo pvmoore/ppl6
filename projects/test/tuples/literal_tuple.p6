@@ -15,7 +15,7 @@ pub fn testLiteralTuple() {
 
         assert s[0]==false
         assert s[1]==0
-        assert s[2]==0.0  
+        assert s[2]==0.0
     }
     const test2 = || {
         // user initialised
@@ -58,7 +58,7 @@ pub fn testLiteralTuple() {
         const s = @structOf(true, 2.0, 3 as long)    ; assert @typeOf(s) is struct(bool,float,long)
 
         assert s[0] == true
-        assert s[1] == 2
+        assert s[1] == 2.0
         assert s[2] == 3
     }
     const test8 = || {

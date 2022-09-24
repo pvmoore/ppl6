@@ -33,10 +33,12 @@ final class BasicType : Type {
         if(isVoid() || right.isVoid()) return false;
 
         if(isReal() == right.isReal()) {
-            /// Allow bool -> any other BasicType
             return category() <= right.category();
         }
-        return right.isReal();
+        if(isInt() == right.isInt()) {
+            return category() <= right.category();
+        }
+        return false;
     }
     override LLVMTypeRef getLLVMType() {
         switch(type) with(Type) {

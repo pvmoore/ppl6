@@ -100,6 +100,13 @@ private:
         Expression left = b.identifier(var);
         auto right = last().as!Expression;
 
+        // If we are initialising a float or double and the initialiser looks like an int
+        // then set the type of the number to the same as the variable.
+        // eg. float a = 1 --> float a = 1.0
+        if(var.type.isReal() && right.isA!LiteralNumber && right.getType().isInteger()) {
+            right.as!LiteralNumber.setType(var.type);
+        }
+
         if(var.isMember()) {
             if(var.isStatic) {
                 assert(var.isStructVar() || var.isClassVar());

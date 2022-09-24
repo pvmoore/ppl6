@@ -18,7 +18,7 @@ struct Fruit(
         this.b += 3
     }
     pub fn foo(/* Fruit* this */) {
-        this.boo(inc:1)
+        this.boo(inc:1.0)
     }
     pub fn bar(/* Fruit* this, */ int a) {
         struct Vegetable(bool isGreen)

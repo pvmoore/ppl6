@@ -28,7 +28,7 @@ struct M1() {
         // calls this.foo<double>
         assert 20 == this.foo<double>(4.5)
         // calls this.foo<int,float>
-        assert 30 == this.foo<int, float>(1,2)
+        assert 30 == this.foo<int, float>(1,2.0)
 
         // calls foo<double>(double)
         assert 20 == this.foo(3.1d)
@@ -71,7 +71,7 @@ pub fn testTemplateFunctions() {
 
         // imported templated function
         assert 200 == tfunc<bool>(true)
-        assert 202 == tfunc<double,float>(1,2)
+        assert 202 == tfunc<double,float>(1.0,2.0)
         // imported untemplated function
         assert 201 == tfunc(3.1)
     }

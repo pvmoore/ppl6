@@ -5,8 +5,8 @@ pub fn testArrays() {
         int[2] a                ; assert a.length==2
 
         int[2] b = @arrayOf(int, 1,3)
-        const c  = @arrayOf(int, 7,13,17)       ; assert @typeOf(c) is int[3]
-        const d  = @arrayOf(float, 1, 3.3, 7)   ; assert @typeOf(d) is float[3]
+        const c  = @arrayOf(int, 7,13,17)           ; assert @typeOf(c) is int[3]
+        const d  = @arrayOf(float, 1.0, 3.3, 7.0)   ; assert @typeOf(d) is float[3]
 
         int[9]* e1 = null
         int*[7] e2

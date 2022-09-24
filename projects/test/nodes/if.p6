@@ -46,12 +46,12 @@ pub fn testIf() {
         }
         assert r == 2
 
-        const w = if(float f = 3; @typeOf(f) is float) {
+        const w = if(float f = 3.0; @typeOf(f) is float) {
             f
         } else {
-            f + 1
+            f + 1.0
         }
-        assert w == 3
+        assert w == 3.0
 
         const x =
             if(a = false; a) 1 else
@@ -68,7 +68,7 @@ pub fn testIf() {
         }
         assert r
 
-        const c = if(const b=0, float f = 3; b==0 and f==3) 1 else 2
+        const c = if(const b=0, float f = 3.0; b==0 and f==3.0) 1 else 2
         assert c == 1
     }
     const shadowing = || {

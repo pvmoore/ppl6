@@ -29,6 +29,7 @@ public:
         _type = type;
     }
 
+    /// Called from anywhere other than EvalValue
     void setType(Type t) {
         value.changeType(_type, t);
         _type = t;

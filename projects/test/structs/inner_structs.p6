@@ -192,7 +192,7 @@ pub fn testInnerStructs() {
         const ttt = TA<int>::TB<float>::TC<byte>()
         assert 7 == ttt.c
         assert 200 == ttt.a
-        assert 300 == ttt.b
+        assert 300.0 == ttt.b
         assert 8 == TA<int>::TB<float>::TC<byte>.sc
         assert 50 == ttt.foo()
         assert 60 == TA<int>::TB<float>::TC<byte>.sfoo()
@@ -211,8 +211,8 @@ pub fn testInnerStructs() {
         assert 9 == tt.d
 
         const ttt = TA<int>::TB<int>::TC<long>::TD<float>()
-        assert 10 == ttt.d
-        assert 11 == TA<int>::TB<int>::TC<long>::TD<float>.sd
+        assert 10.0 == ttt.d
+        assert 11.0 == TA<int>::TB<int>::TC<long>::TD<float>.sd
         assert 70 == ttt.foo()
         assert 80 == TA<int>::TB<int>::TC<long>::TD<float>.sfoo()
     }
