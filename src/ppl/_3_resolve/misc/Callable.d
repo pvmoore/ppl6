@@ -22,6 +22,7 @@ struct Callable {
     bool isStructMember()      { return func ? func.isMember() : var.isMember(); }
     bool isTemplateBlueprint() { return func ? func.isTemplateBlueprint() : false; }
     bool isPrivate()           { return func ? !func.isPublic : !var.isPublic; }
+    bool isResolved()          { return resultReady() && getNode().isResolved(); }
 
     string getName()           { return func ? func.name : var.name; }
     Type getType()             { return func ? func.getType : var.type; }
@@ -69,7 +70,7 @@ struct Callable {
     string toString() {
         if(!resultReady()) return "Not ready";
         string t = isTemplateBlueprint() ? " TEMPLATE":"";
-        if(!getType.getFunctionType()) {
+        if(!getType().getFunctionType()) {
             return "%s:%s%s %s(type=%s)".format(id, func?"FUNC":"VAR", t, getName(), getType());
         }
         return "%s:%s%s %s(%s)".format(id, func?"FUNC":"VAR", t, getName(), paramTypes());

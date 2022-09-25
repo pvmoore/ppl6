@@ -17,7 +17,7 @@ public:
         this.typeMatcherRegex   = new ParamTypeMatcherRegex(module_);
         this.identifierResolver = new ResolveIdentifier(module_);
     }
-    bool find(Struct ns, Call call, DynamicArray!Function templateFuncs) {
+    bool find(Struct ns, Call call, Function[] templateFuncs) {
         //doChat = call.name=="__nullCheck";// && module_.canonicalName=="test_optional";
 
         chat("================== Get implicit function templates for call %s(%s)",
@@ -33,7 +33,7 @@ public:
         auto matchingParams = appender!(Type[][]);
         auto matchingFuncs  = appender!(Function[]);
 
-        foreach(f; templateFuncs.values()) {
+        foreach(f; templateFuncs) {
             if(f.blueprint.numFuncParams() == call.numArgs()) {
                 chat("  Trying template %s", f);
 

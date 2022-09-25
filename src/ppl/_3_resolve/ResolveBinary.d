@@ -76,14 +76,15 @@ public:
                     n.type = rt;
                     n.isPtrArithmetic = true;
                 } else {
-                    /// Set to largest of left or right type
 
-                    auto t = getBestFit(lt, rt);
+                    /// Set to largest of left or right type
+                    Type t = getBestFit(lt, rt);
 
                     if(!t) {
                         module_.addError(n, "Types are incompatible %s and %s".format(lt, rt), true);
                         return;
                     }
+
 
                     /// Promote byte, short to int
                     if(t.isValue() && t.isInteger() && t.category() < TYPE_INT.category()) {

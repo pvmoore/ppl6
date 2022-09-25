@@ -5,7 +5,7 @@ import ppl.internal;
 final class CollectOverloads {
 private:
     @Borrowed Module module_;
-    @Borrowed DynamicArray!Callable results;
+    @Borrowed CallableSet callableSet;
     string name;
     bool ready;
 public:
@@ -18,11 +18,12 @@ public:
     /// Return true - if results contains the full overload set and all types are known,
     ///       false - if we are waiting for imports or some types are waiting to be known.
     ///
-    bool collect(Call call, ModuleAlias modAlias, DynamicArray!Callable results) {
-        this.name     = call.name;
-        this.ready    = true;
-        this.results  = results;
-        this.results.clear();
+    bool collect(Call call, ModuleAlias modAlias, CallableSet callableSet) {
+        this.name        = call.name;
+        this.ready       = true;
+        this.callableSet = callableSet;
+
+        callableSet.reset();
 
         // if(call.name.startsWith("__nullCheck<S>")) {
         //     dd("collecting", call.name, module_.canonicalName, results);
@@ -102,7 +103,7 @@ private:
                 auto v = n.as!Variable;
                 if(v.name==name) {
                     if(v.type.isUnknown()) ready = false;
-                    results.add(Callable(v));
+                    callableSet.add(Callable(v));
                 }
                 break;
             case FUNCTION:
@@ -164,13 +165,13 @@ private:
 
     void addFunction(Function f) {
         if(f.isTemplateBlueprint()) {
-            results.add(Callable(f));
+            callableSet.add(Callable(f));
         } else {
             if(f.getType().isUnknown()) {
                 ready = false;
             }
             module_.buildState.moduleRequired(f.moduleName);
-            results.add(Callable(f));
+            callableSet.add(Callable(f));
         }
     }
 }

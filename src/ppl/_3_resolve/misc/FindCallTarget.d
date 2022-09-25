@@ -11,24 +11,16 @@ private:
     Module module_;
     CollectOverloads collector;
     ImplicitTemplates implicitTemplates;
-    DynamicArray!Callable overloads;
-    DynamicArray!Function funcTemplates;
-
-    /// List of Callable ruled out based on name match failure
-    Callable[] filteredOutByParamNames;
-
     CallableSet callableSet;
 public:
     this(Module module_) {
         this.module_           = module_;
         this.collector         = new CollectOverloads(module_);
         this.implicitTemplates = new ImplicitTemplates(module_);
-        this.overloads         = new DynamicArray!Callable;
-        this.funcTemplates     = new DynamicArray!Function;
-        this.callableSet       = new CallableSet;
+        this.callableSet       = new CallableSet(module_);
     }
     /// Assume:
-    ///     call.argTypes may not yet be known
+    ///     call.argTypes() may not yet be known
     ///
     Callable standardFind(Call call, ModuleAlias modAlias=null) {
 
@@ -45,6 +37,7 @@ public:
         /// then we need to mangle the name with the template types and extract the template
         if(call.isTemplated() && !call.name.contains("<")) {
             /// This is  call to a template function.
+
             /// We can't do anything until the template types are known and added to the name
             if(!call.templateTypes.areKnown()) {
                 return CALLABLE_NOT_READY;
@@ -70,68 +63,36 @@ public:
         chat("looking for %s, from line %s", call.name, call.line()+1);
 
         /// Collect all the functions with the correct name
-        if(!collector.collect(call, modAlias, overloads)) {
+        if(!collector.collect(call, modAlias, callableSet)) {
             // Some of the targets are not ready yet
             return CALLABLE_NOT_READY;
         }
 
-        /// If we get here then we have all of the possible targets
+        /// If we get here then we have collected all of the possible targets
 
-        /// Remove the targets that we should not be able to reach
-        int numRemoved = removeInvisible();
-
-        if(doChat) {
-            chat("  overloads = %s, (%s invisible)", overloads.length, numRemoved);
-            foreach(o; overloads) chat("   %s", o);
+        {   /// If we only have one unfiltered Callable then just return it and check the types later
+            Callable[] unfiltered = callableSet.getUnfiltered();
+            if(unfiltered.length == 1 && !unfiltered[0].isTemplateBlueprint()) {
+                return unfiltered[0];
+            }
         }
 
-        if(overloads.length==1 && overloads[0].isTemplateBlueprint()) {
-            /// If we get here then we have a possible template match but
-            /// not enough information to extract it
-        }
-
-        if(overloads.length==1 && !overloads[0].isTemplateBlueprint()) {
-
-            /// Return this result as it's the only one and check it later
-            /// to make sure the types match
-
-            auto r = overloads[0];
-
-            //if(call.numArgs==r.numParams &&
-            //   call.argTypes.areKnown &&
-            //  !call.argTypes.canImplicitlyCastTo(r.paramTypes))
-            //{
-            //    /// Ok we have enough info to know this won't work
-            //
-            //
-            //}
-
-            return r;
-        }
-
-        /// From this point onwards we need the resolved types
+        /// From this point onwards we need the resolved arg types
         if(!call.argTypes.areKnown()) {
             return CALLABLE_NOT_READY;
         }
 
         /// Filter out the targets that do not match the Call arguments
-        chat("  before filtering (%s overloads)", overloads.length);
-        filterOverloads(call);
+        callableSet.filter(call);
 
-        if(doChat) {
-            chat("  after filtering (%s overloads)", overloads.length);
-            foreach(o; overloads) chat("   %s", o);
-        }
-
-
-        if(overloads.length==0) {
+        /// Handle no matches
+        if(!callableSet.hasAnyMatches()) {
             /// There are no remaining targets. Look for a possible template match
-
-            if(funcTemplates.length > 0) {
-
+            auto templates = callableSet.getFuncTemplates();
+            if(templates.length > 0) {
                 chat("Looking for an implicit template");
                 /// There is a template with the same name. Try that
-                if(implicitTemplates.find(ns, call, funcTemplates)) {
+                if(implicitTemplates.find(ns, call, templates)) {
 
                     chat("  Found an implicit template match");
                     /// If we get here then we found a match.
@@ -157,23 +118,25 @@ public:
             return CALLABLE_NOT_READY;
         }
 
-        /// There is more than one matching target. This is an ambiguous call
-        if(overloads.length > 1) {
-            module_.buildState.addError(new AmbiguousCall(module_, call, overloads.values), true);
+        // If we get here then we have one or more matches
+
+        if(!callableSet.hasSingleMatch()) {
+            /// There is more than one matching target. This is an ambiguous call
+            module_.buildState.addError(new AmbiguousCall(module_, call, callableSet.getAllMatches().dup), true);
             return CALLABLE_NOT_READY;
         }
 
         /// If we get here then we have a single match
-
-        assert(overloads.length==1);
+        Callable match = callableSet.getSingleMatch();
 
         /// Add the function to the resolution set
-        if(overloads[0].isFunction()) {
-            module_.buildState.moduleRequired(overloads[0].func.getModule().canonicalName);
+        if(match.isFunction()) {
+            module_.buildState.moduleRequired(match.func.getModule().canonicalName);
         }
 
-        return overloads[0];
+        return match;
     }
+
     /// Assume:
     ///     Struct is known
     ///     call.argTypes may not yet be known
@@ -193,6 +156,8 @@ public:
             return CALLABLE_NOT_READY;
         }
 
+        /// If template types have been specified and the name has not been manged yet
+        /// then we need to mangle the name with the template types and extract the template
         if(call.isTemplated() && !call.name.contains("<")) {
             chat("\t%s is templated", call.name);
             string mangledName = call.name ~ "<" ~ module_.buildState.mangler.mangle(call.templateTypes) ~ ">";
@@ -202,6 +167,8 @@ public:
             return CALLABLE_NOT_READY;
         }
 
+        /// Collect all the possible overloads
+        callableSet.reset();
         Function[] fns;
         Variable[] vars;
 
@@ -210,7 +177,7 @@ public:
             vars ~= ns.getStaticVariable(call.name);
 
             chat("\tadding static funcs %s", fns);
-            //chat("\tadding static vars %s", vars);
+            chat("\tadding static vars %s", vars);
 
             /// Ensure these functions are resolved
             //foreach(f; fns) {
@@ -226,43 +193,41 @@ public:
             chat("\tadding member vars %s", vars);
         }
 
-        /// Filter
-        overloads.clear();
-        foreach(f; fns) overloads.add(Callable(f));
+        foreach(f; fns) {
+            callableSet.add(Callable(f));
+        }
         foreach(v; vars) {
-            if(v && v.isFunctionPtr()) overloads.add(Callable(v));
+            if(v && v.isFunctionPtr()) {
+                callableSet.add(Callable(v));
+            }
         }
 
-        chat("\toverloads: %s", .toString(overloads));
-
-        int numRemoved = removeInvisible(ns, call);
-
-        chat("\tnum invisibles removed: %s", numRemoved);
-
-        /// From this point onwards we need the resolved types
+        /// From this point onwards we need the resolved arg types
         if(!call.argTypes().areKnown()) {
 
-            if(overloads.length>0) {
+            /// If any of the call arguments is a lambda then try to resolve that
+            if(callableSet.numUnfiltered() > 0) {
                 return findImplicitMatchWithUnknownArgs(call);
             }
-
             return CALLABLE_NOT_READY;
         }
+
+        /// All the call arguemtns are now known
 
         chat("\tAll arg types are known");
 
         /// Try to filter the results down to one match
-        filterOverloads(call);
+        callableSet.filter(call);
 
-        chat("\tafter filter: %s", .toString(overloads));
+        if(!callableSet.hasAnyMatches()) {
+            /// No matches
 
-        if(overloads.length==0) {
+            chat("\tno matches");
 
-            chat("\tno overloads remaining");
-
-            if(funcTemplates.length>0) {
+            auto templates = callableSet.getFuncTemplates();
+            if(templates.length > 0) {
                 /// There is a template with the same name. Try that
-                if(implicitTemplates.find(ns, call, funcTemplates)) {
+                if(implicitTemplates.find(ns, call, templates)) {
                     /// If we get here then we found an implicit match.
                     /// call.templateTypes have been set
                     return CALLABLE_NOT_READY;
@@ -296,12 +261,12 @@ public:
             string msg;
             Suggestions suggestions;
 
-            if(numRemoved>0) {
+            if(callableSet.numInvisible() > 0) {
                 msg ~= "Struct '%s' function %s(%s) is not visible";
-            } else if(filteredOutByParamNames.length > 0) {
+            } else if(callableSet.numWithIncorrectParamNames() > 0) {
                 msg ~= "Struct '%s' function does not match call '%s(%s)' - parameter names do not match";
 
-                suggestions = new CallParamNameMismatchSuggestions(call, filteredOutByParamNames.dup);
+                suggestions = new CallParamNameMismatchSuggestions(call, callableSet.getAllWithIncorrectParamNames().dup);
 
             } else {
                 msg ~= "Struct '%s' does not have function %s(%s)";
@@ -322,210 +287,27 @@ public:
 
             return CALLABLE_NOT_READY;
 
-        } else if(overloads.length > 1) {
-            module_.buildState.addError(new AmbiguousCall(module_, call, overloads.values), true);
+        }
+
+        /// We have one or more matches
+
+        if(!callableSet.hasSingleMatch()) {
+            /// More than one match
+            module_.buildState.addError(new AmbiguousCall(module_, call, callableSet.getAllMatches().dup), true);
             return CALLABLE_NOT_READY;
         }
 
-        //chat("    returning", overloads[0], overloads[0].resultReady);
+        /// If we get here then we have a single match
+        Callable match = callableSet.getSingleMatch();
 
-        assert(overloads.length==1);
-
-        /// Add the static function to the resolution set
-        if(overloads[0].isStatic && overloads[0].isFunction()) {
-            module_.buildState.moduleRequired(overloads[0].func.getModule().canonicalName);
+        /// Add the function to the resolution set
+        if(match.isFunction()) {
+            module_.buildState.moduleRequired(match.func.getModule().canonicalName);
         }
 
-        return overloads[0];
+        return match;
     }
 private:
-    /// Filter out private module scope functions which are not in the same module
-    int removeInvisible() {
-        int count = 0;
-        foreach(callable; overloads[].dup) {
-            if(callable.getModule().nid != module_.nid) {
-                if(callable.isPrivate) {
-                    overloads.remove(callable);
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-    /// Filter out private struct member/static functions which are not in the same module
-    int removeInvisible(Struct ns, Call call) {
-        int count = 0;
-        foreach(callable; overloads[].dup) {
-
-            if(callable.getModule().nid != module_.nid) {
-                if(callable.isPrivate()) {
-                    assert(callable.isStructMember());
-                    auto targetStruct = callable.getStruct();
-                    assert(targetStruct);
-
-                    auto callerStruct = call.getAncestor!Struct;
-                    if(!callerStruct || callerStruct != targetStruct) {
-                        overloads.remove(callable);
-                        count++;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-    ///
-    /// Filter out any overloads that do not have the correct num args, param names etc.
-    /// Add any filtered out function templates to funcTemplates
-    ///
-    /// Assume:
-    ///     All function names are the same
-    ///     Arg types are known
-    ///     paramNames must match actual param names
-    ///     paramNames are unique
-    void filterOverloads(Call call) {
-        import common : indexOf;
-
-        chat("\tFiltering ...");
-
-        funcTemplates.clear();
-        filteredOutByParamNames.length = 0;
-
-        // bool isPossibleImplicitThisCall =
-        //     call.name!="new" &&
-        //     !call.implicitThisArgAdded &&
-        //     call.isStartOfChain &&
-        //     call.hasAncestor!Struct;
-
-        lp:foreach(callable; overloads[].dup) {
-
-            if(callable.isTemplateBlueprint()) {
-                overloads.remove(callable);
-                funcTemplates.add(callable.func);
-                continue;
-            }
-
-            assert(callable.getType().isFunction());
-
-            Type[] params  = callable.paramTypes();
-            Type[] args    = call.argTypes();
-
-            /// Check the number of params
-            if(params.length != args.length) {
-                chat("\tRemoving %s -- wrong number of arguments", callable);
-                overloads.remove(callable);
-                continue;
-            }
-
-            if(call.paramNames.length > 0) {
-                /// param=expr arg list
-                int count = 0;
-                string[] names = callable.paramNames();
-                foreach(i, name; call.paramNames) {
-                    int index = names.indexOf(name);
-                    if(index==-1) {
-                        // Param name not found
-                        chat("\tRemoving %s -- param %s not found", callable, name);
-                        overloads.remove(callable);
-                        filteredOutByParamNames ~= callable;
-                        continue lp;
-                    }
-                    count++;
-                    auto arg   = args[i];
-                    auto param = params[index];
-
-                    if(!arg.canImplicitlyCastTo(param)) {
-                        chat("\tRemoving %s -- can not cast arg to param", callable);
-                        overloads.remove(callable);
-                        continue lp;
-                    }
-                }
-            } else {
-                /// standard arg list
-                if(!canImplicitlyCastTo(args, params)) {
-                    chat("\tRemoving %s -- can not cast args to params", callable);
-                    overloads.remove(callable);
-                    continue;
-                }
-            }
-        }
-        /// Only try to select an exact match if we have checked
-        /// the arg types and failed to find a distinct match
-        if(overloads.length > 1 && call.numArgs()>0) {
-            selectExactMatch(call, overloads);
-        }
-    }
-    ///
-    /// Select 1 match if it matches the args exactly.
-    ///
-    /// Assume:
-    ///     All types are known
-    ///     overloads.length > 1
-    ///     all overloads match the call implicitly
-    ///
-    void selectExactMatch(Call call, DynamicArray!Callable overloads) {
-        assert(overloads.length>0);
-        import common : indexOf;
-
-        void filter(bool delegate(Type,Type) matcher) {
-            lp:foreach(callable; overloads[]) {
-                Type[] params = callable.paramTypes();
-
-                if(call.paramNames.length > 0) {
-                    /// name=value arg list
-                    string[] names = callable.paramNames();
-                    foreach(i, name; call.paramNames) {
-                        int index = names.indexOf(name);
-                        assert(index != -1);
-
-                        auto arg   = call.argTypes()[i];
-                        auto param = params[index];
-
-                        if(!matcher(arg, param)) continue lp;
-                    }
-                } else {
-                    /// standard arg list
-                    foreach(i, a; call.argTypes()) {
-                        if(!matcher(a, params[i])) continue lp;
-                    }
-                }
-
-                //dd("  exact match", callable.id, overloads[]);
-
-                /// Exact match found
-                foreach(o; overloads[].dup) {
-                    if(o.id != callable.id) overloads.remove(o);
-                }
-
-                //dd("  -->", overloads);
-
-                assert(overloads.length==1);
-            }
-        }
-
-        /// Try to exactly match all arguments
-        filter((arg,param) {
-            return arg.exactlyMatches(param);
-        });
-
-        if(overloads.length>1) {
-            /// Try an almost exact match where integer types will match any larger integer type
-            /// and real types match any larger real type
-
-            filter((arg, param) {
-                if(arg.exactlyMatches(param)) {
-                    /// match
-                } else if(arg.isInteger()==param.isInteger() && arg.category()<param.category()) {
-                    /// integer and arg is smaller than param
-                } else if(arg.isReal()==param.isReal() && arg.category()<param.category()) {
-                    /// real and arg is smaller than param
-                } else {
-                    /// nope
-                    return false;
-                }
-                return true;
-            });
-        }
-    }
     ///
     /// Extract one or more function templates:
     ///
@@ -540,11 +322,11 @@ private:
         assert(call.isTemplated());
 
         /// Find the template(s)
-        if(!collector.collect(call, modAlias, overloads)) {
+        if(!collector.collect(call, modAlias, callableSet)) {
             return false;
         }
 
-        if(overloads.length==0) {
+        if(callableSet.numUnfiltered()==0) {
             //throw new CompilerError(call,
             //    "Function template %s not found".format(call.name));
             return true;
@@ -552,7 +334,7 @@ private:
 
         Function[][string] toExtract;
 
-        foreach(ft; overloads[]) {
+        foreach(ft; callableSet.getUnfiltered()) {
             if(ft.isFunction()) {
                 auto f = ft.func;
                 assert(!f.isImport);
@@ -637,24 +419,29 @@ private:
     Callable findImplicitMatchWithUnknownArgs(Call call) {
         //if(call.name.indexOf("each")!=-1) dd("findImplicitMatchWithUnknownArgs", call);
 
-        bool checkFuncPtr(FunctionType param, FunctionType arg) {
-            bool numArgsMatch() {
+        bool _checkFuncPtr(FunctionType param, FunctionType arg) {
+            bool _numArgsMatch() {
                 return param.numParams() == arg.numParams();
             }
-            bool returnTypesSameOrUnknown() {
+            bool _returnTypesSameOrUnknown() {
                 return param.returnType().isUnknown() ||
                 arg.returnType().isUnknown() ||
                 param.returnType.exactlyMatches(arg.returnType());
             }
-            return numArgsMatch() && returnTypesSameOrUnknown();
+            return _numArgsMatch() && _returnTypesSameOrUnknown();
         }
 
-        foreach(callable; overloads[]) {
+        Callable[] possibleMatches;
+
+        foreach(callable; callableSet.getUnfiltered()) {
             Type[] argTypes   = call.argTypes();
-            Type[] paramTypes = callable.paramTypes;
+            Type[] paramTypes = callable.paramTypes();
 
             bool possibleMatch = !callable.isTemplateBlueprint() &&
-            call.numArgs == callable.numParams();
+                                 call.numArgs() == callable.numParams();
+
+            /// TODO - This does not handle named arguments properly
+
             for(auto i=0; possibleMatch && i<call.numArgs(); i++) {
                 auto arg   = argTypes[i];
                 auto param = paramTypes[i];
@@ -664,7 +451,7 @@ private:
                         /// This is an unresolved function ptr argument.
                         /// Filter out where number of args is different.
                         /// If return type is known, filter out if they are different
-                        possibleMatch = checkFuncPtr(param.getFunctionType(), arg.getFunctionType());
+                        possibleMatch = _checkFuncPtr(param.getFunctionType(), arg.getFunctionType());
                     } else {
                         /// We have an unknown that we can't handle
                         return CALLABLE_NOT_READY;
@@ -675,14 +462,15 @@ private:
             }
             if(possibleMatch) {
                 //dd("\tPossible match:", callable);
+                possibleMatches ~= callable;
             } else {
                 //dd("\tNot a match   :", callable);
-                overloads.remove(callable);
+                //overloads.remove(callable);
             }
         }
-        if(overloads.length==1) {
+        if(possibleMatches.length==1) {
             //dd("\tWe have a winner", overloads[0]);
-            return overloads[0];
+            return possibleMatches[0];
         }
 
         return CALLABLE_NOT_READY;

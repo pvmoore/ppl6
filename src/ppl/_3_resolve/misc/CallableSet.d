@@ -8,27 +8,49 @@ import ppl.internal;
 final class CallableSet {
 private:
     Module mod;
-    Call call;
-    Type[] callArgTypes;
-    Callable[] results;
+    Callable[] unfiltered;
 
-    enum Reason { NONE, NUM_PARAMS, PARAM_NAME, PARAM_TYPE, INVISIBLE }
-
-    Callable[] funcTemplates;
+    Function[] funcTemplates;
     Callable[] nonMatches;
     Reason[] nonMatchReasons;
     Callable[] partialMatches;
     Callable[] exactMatches;
 public:
+    enum Reason { NONE, NUM_PARAMS, PARAM_NAME, PARAM_TYPE, INVISIBLE }
+
+    bool hasSingleMatch() { return exactMatches.length==1 || (exactMatches.length==0 && partialMatches.length==1); }
+    bool hasAnyMatches() { return exactMatches.length > 0 || partialMatches.length > 0; }
+    int numUnfiltered() { return unfiltered.length.as!int; }
+    int numInvisible() { return nonMatchReasons.filter!(r=>r==Reason.INVISIBLE).count().as!int; }
+    int numWithIncorrectParamNames() { return nonMatchReasons.filter!(r=>r==Reason.PARAM_NAME).count().as!int; }
+
+    Callable getSingleMatch() {
+        assert(hasSingleMatch());
+        return exactMatches.length==1 ? exactMatches[0] : partialMatches[0];
+    }
+    Callable[] getAllMatches() { return exactMatches ~ partialMatches; }
     Callable[] getExactMatches() { return exactMatches; }
     Callable[] getPartialMatches() { return partialMatches; }
-    Callable[] getFuncTemplates() { return funcTemplates; }
+    Function[] getFuncTemplates() { return funcTemplates; }
+    Callable[] getNonMatches() { return nonMatches; }
+    Reason[] getNonMatchReasons() { return nonMatchReasons; }
+    Callable[] getUnfiltered() { return unfiltered; }
+    Callable[] getAllWithIncorrectParamNames() {
+        Callable[] results;
+        foreach(i; 0..nonMatches.length) {
+            if(nonMatchReasons[i] == Reason.PARAM_NAME) results ~= nonMatches[i];
+        }
+        return results;
+    }
 
-    void reset(Call call) {
-        this.mod = call.getModule();
-        this.call = call;
-        this.callArgTypes = call.argTypes();
-        this.results.length = 0;
+    ulong length() { return partialMatches.length + exactMatches.length; }
+
+    this(Module mod) {
+        this.mod = mod;
+    }
+
+    void reset() {
+        this.unfiltered.length = 0;
         this.funcTemplates.length = 0;
         this.nonMatches.length = 0;
         this.nonMatchReasons.length = 0;
@@ -36,65 +58,25 @@ public:
         this.partialMatches.length = 0;
     }
     void add(Callable c) {
-        results ~= c;
+        unfiltered ~= c;
     }
-    /**
-     * Return the best matches from the list of partial matches.
-     * Assume there are at least two partial matches and no exact matches
-     */
-    // Callable[] getFilteredPartialMatches() {
-    //     assert(exactMatches.length == 0);
-    //     assert(partialMatches.length > 1);
-
-    //     Callable[] matches;
-
-    //     // Keep partial matches where the types exactly match
-    //     // or they are either both integer or both real.
-
-    //     foreach(c; partialMatches) {
-    //         Type[] callArgTypesInOrder = c.getCallArgTypesInOrder(call);
-    //         Type[] paramTypes = c.paramTypes();
-
-    //         foreach(i; 0..paramTypes.length) {
-    //             Type arg = callArgTypesInOrder[i];
-    //             Type param = paramTypes[i];
-    //             bool ok = true;
-
-    //             if(arg.exactlyMatches(param)) {
-    //                 /// match
-    //             } else if(arg.isInteger()==param.isInteger() && arg.category()<param.category()) {
-    //                 /// integer and arg is smaller than param
-    //             } else if(arg.isReal()==param.isReal() && arg.category()<param.category()) {
-    //                 /// real and arg is smaller than param
-    //             } else {
-    //                 /// nope
-    //                 ok = false;
-    //             }
-
-    //             if(ok) {
-    //                 matches ~= c;
-    //             }
-    //         }
-    //     }
-
-    //     return matches;
-    // }
     /**
      *  Try to match all Callables against the Call.
      *  Produce a list of possible matches
      */
-    void filter() {
-        assert(call);
-        assert(mod);
+    void filter(Call call) {
         import common : indexOf;
 
-        lp: foreach(c; results) {
+        Type[] callArgTypes = call.argTypes();
+
+        lp: foreach(j, c; unfiltered) {
+
             if(c.isTemplateBlueprint()) {
                 // Save this for later if we can't find anything suitable
-                funcTemplates ~= c;
+                funcTemplates ~= c.func;
                 continue;
             }
-            if(isInvisible(c)) {
+            if(isInvisible(call, c)) {
                 nonMatches ~= c;
                 nonMatchReasons ~= Reason.INVISIBLE;
                 continue;
@@ -155,16 +137,21 @@ public:
         }
     }
 private:
-    bool isInvisible(Callable c) {
+    bool isInvisible(Call call, Callable c) {
         if(c.getModule().nid != mod.nid) {
             // Callable is in a different module
-            if(c.isPrivate()) {
-                assert(c.isStructMember());
-                auto targetStruct = c.getStruct();
-                assert(targetStruct);
 
-                auto callerStruct = call.getAncestor!Struct;
-                if(!callerStruct || callerStruct != targetStruct) {
+            if(c.isPrivate()) {
+
+                if(c.isStructMember()) {
+                    auto targetStruct = c.getStruct();
+                    assert(targetStruct);
+
+                    auto callerStruct = call.getAncestor!Struct;
+                    if(!callerStruct || callerStruct != targetStruct) {
+                        return true;
+                    }
+                } else {
                     return true;
                 }
             }
