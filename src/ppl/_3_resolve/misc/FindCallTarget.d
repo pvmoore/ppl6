@@ -4,7 +4,6 @@ import ppl.internal;
 import common : contains;
 
 __gshared bool doChat = false;
-enum NEW = false;
 
 final class FindCallTarget {
 private:
@@ -118,28 +117,13 @@ public:
             return CALLABLE_NOT_READY;
         }
 
-        // If we get here then we have one or more matches
-
-        if(!callableSet.hasSingleMatch()) {
-            /// There is more than one matching target. This is an ambiguous call
-            module_.buildState.addError(new AmbiguousCall(module_, call, callableSet.getAllMatches().dup), true);
-            return CALLABLE_NOT_READY;
-        }
-
-        /// If we get here then we have a single match
-        Callable match = callableSet.getSingleMatch();
-
-        /// Add the function to the resolution set
-        if(match.isFunction()) {
-            module_.buildState.moduleRequired(match.func.getModule().canonicalName);
-        }
-
-        return match;
+        return oneOrMoreMatchesFound(call);
     }
 
     /// Assume:
     ///     Struct is known
     ///     call.argTypes may not yet be known
+    ///     Callables may not yet be resolved
     ///
     Callable structFind(Call call, Struct ns, bool staticOnly) {
         assert(ns);
@@ -220,7 +204,7 @@ public:
         callableSet.filter(call);
 
         if(!callableSet.hasAnyMatches()) {
-            /// No matches
+            /// There are no remaining targets. Look for a possible template match
 
             chat("\tno matches");
 
@@ -289,7 +273,10 @@ public:
 
         }
 
-        /// We have one or more matches
+        return oneOrMoreMatchesFound(call);
+    }
+private:
+    Callable oneOrMoreMatchesFound(Call call) {
 
         if(!callableSet.hasSingleMatch()) {
             /// More than one match
@@ -307,7 +294,6 @@ public:
 
         return match;
     }
-private:
     ///
     /// Extract one or more function templates:
     ///
