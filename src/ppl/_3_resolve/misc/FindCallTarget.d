@@ -152,38 +152,9 @@ public:
         }
 
         /// Collect all the possible overloads
-        callableSet.reset();
-        Function[] fns;
-        Variable[] vars;
-
-        if(staticOnly) {
-            fns  ~= ns.getStaticFunctions(call.name);
-            vars ~= ns.getStaticVariable(call.name);
-
-            chat("\tadding static funcs %s", fns);
-            chat("\tadding static vars %s", vars);
-
-            /// Ensure these functions are resolved
-            //foreach(f; fns) {
-            //    dd("    requesting function", f.name);
-            //    functionRequired(f.getModule.canonicalName, f.name);
-            //}
-
-        } else {
-            fns  ~= ns.getMemberFunctions(call.name);
-            vars ~= ns.getMemberVariable(call.name);
-
-            chat("\tadding member funcs %s", fns);
-            chat("\tadding member vars %s", vars);
-        }
-
-        foreach(f; fns) {
-            callableSet.add(Callable(f));
-        }
-        foreach(v; vars) {
-            if(v && v.isFunctionPtr()) {
-                callableSet.add(Callable(v));
-            }
+        if(!collector.structCollect(call, ns, staticOnly, callableSet)) {
+            // Some of the targets are not ready yet
+            return CALLABLE_NOT_READY;
         }
 
         /// From this point onwards we need the resolved arg types
@@ -259,6 +230,11 @@ public:
                     // TODO - If calling a static function on an instance variable
                     //        then we could show the static function that might have matched
                 }
+
+                auto fns = callableSet.getNonMatches()
+                                      .filter!(it=>it.isFunction())
+                                      .map!(it=>it.func)
+                                      .array;
 
                 if(fns.length>0) {
                     suggestions = new FunctionSuggestions(fns);

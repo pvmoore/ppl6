@@ -41,7 +41,41 @@ public:
         // }
         return ready && module_.isParsed();
     }
-    //bool flag;
+    bool structCollect(Call call, Struct ns, bool staticOnly, CallableSet callableSet) {
+        this.name        = call.name;
+        this.ready       = true;
+        this.callableSet = callableSet;
+
+        callableSet.reset();
+
+        Function[] fns;
+        Variable[] vars;
+
+        if(staticOnly) {
+            fns  ~= ns.getStaticFunctions(call.name);
+            vars ~= ns.getStaticVariable(call.name);
+
+            /// Ensure these functions are resolved
+            //foreach(f; fns) {
+            //    dd("    requesting function", f.name);
+            //    functionRequired(f.getModule.canonicalName, f.name);
+            //}
+
+        } else {
+            fns  ~= ns.getMemberFunctions(call.name);
+            vars ~= ns.getMemberVariable(call.name);
+        }
+
+        foreach(f; fns) {
+            callableSet.add(Callable(f));
+        }
+        foreach(v; vars) {
+            if(v && v.isFunctionPtr()) {
+                callableSet.add(Callable(v));
+            }
+        }
+        return module_.isParsed();
+    }
 private:
     /// Collect from an aliased import
     void subCollect(Import imp) {
