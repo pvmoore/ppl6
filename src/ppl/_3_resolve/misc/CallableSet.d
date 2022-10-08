@@ -69,37 +69,35 @@ public:
 
         Type[] callArgTypes = call.argTypes();
 
-        lp: foreach(j, c; unfiltered) {
+        lp: foreach(j, callable; unfiltered) {
 
-            if(c.isTemplateBlueprint()) {
+            if(callable.isTemplateBlueprint()) {
                 // Save this for later if we can't find anything suitable
-                funcTemplates ~= c.func;
+                funcTemplates ~= callable.func;
                 continue;
             }
-            if(isInvisible(call, c)) {
-                nonMatches ~= c;
+            if(isInvisible(call, callable)) {
+                nonMatches ~= callable;
                 nonMatchReasons ~= Reason.INVISIBLE;
                 continue;
             }
 
-            Type[] paramTypes = c.paramTypes();
-            Type[] argTypesInOrder;
+            Type[] paramTypes = callable.paramTypes();
 
             if(paramTypes.length != callArgTypes.length) {
-                nonMatches ~= c;
+                nonMatches ~= callable;
                 nonMatchReasons ~= Reason.NUM_PARAMS;
                 continue;
             }
 
             if(call.paramNames.length > 0) {
                 // named arguments
-                argTypesInOrder.length = callArgTypes.length;
-                string[] paramNames = c.paramNames();
+                string[] paramNames = callable.paramNames();
                 foreach(i, name; call.paramNames) {
                     int index = paramNames.indexOf(name);
                     if(index==-1) {
                         // Param not found
-                        nonMatches ~= c;
+                        nonMatches ~= callable;
                         nonMatchReasons ~= Reason.PARAM_NAME;
                         continue lp;
                     }
@@ -107,32 +105,30 @@ public:
                     auto argType   = callArgTypes[i];
                     auto paramType = paramTypes[index];
 
-                    argTypesInOrder[i] = argType;
-
                     if(!argType.canImplicitlyCastTo(paramType)) {
-                        nonMatches ~= c;
+                        nonMatches ~= callable;
                         nonMatchReasons ~= Reason.PARAM_TYPE;
                         continue lp;
                     }
                 }
             } else {
                 // standard argument list
-                argTypesInOrder = callArgTypes;
-
                 if(!canImplicitlyCastTo(callArgTypes, paramTypes)) {
-                    nonMatches ~= c;
+                    nonMatches ~= callable;
                     nonMatchReasons ~= Reason.PARAM_TYPE;
                     continue;
                 }
             }
 
+            Type[] argTypesInOrder = callable.getCallArgTypesInOrder(call);
+
             // If we get here then we have at least a partial match
             assert(argTypesInOrder.length == callArgTypes.length);
 
             if(argTypesInOrder.length == 0 || argTypesInOrder.exactlyMatch(paramTypes)) {
-                exactMatches ~= c;
+                exactMatches ~= callable;
             } else {
-                partialMatches ~= c;
+                partialMatches ~= callable;
             }
         }
     }

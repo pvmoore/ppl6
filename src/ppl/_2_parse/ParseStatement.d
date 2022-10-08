@@ -370,6 +370,7 @@ private: //=====================================================================
                 imp.add(def);
             }
 
+            // ',' or end of Statement
             if(t.kind() == TT.COMMA) {
                 t.next();
             } else break;

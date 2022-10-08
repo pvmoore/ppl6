@@ -6,6 +6,8 @@ enum VERSION = "6.5.0";
 
 /*
 
+
+
 6.5.0 - Start refactor of Call resolution.
         Rename FindFunction to FindCallTarget
         Disallow int->real implicit conversion
@@ -38,12 +40,8 @@ enum VERSION = "6.5.0";
 ░░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓
 
 
-    remove filterpartialmatches. return an ambiguous call error
-    use getCallArgTypesInOrder
-
-
-
     -- ExecuteFunction.execute(Function|Lambda)
+       Config.maxEvalIterations
 
     -- Use github wiki
 
@@ -94,6 +92,13 @@ enum VERSION = "6.5.0";
   - Use fast math option when generating code
   - Ensure only basic optimisations get done if we are in DEBUG mode
 
+  - Rename 'loop' to 'for'
+    Also:
+    ```
+    for i in range {} // 0..x could be implicitly converted to a Range<int>
+    // Possibly use operator in() for this
+    ````
+
   - allow code blocks eg.
   b = {
       // statements
@@ -122,13 +127,10 @@ TODO Compiler:
 
     - Add coroutine intrinsics eg. @coroPrelude, @coroHandle, @coroSuspend, @coroResume
 
-
     - Cache debug ir, optimised ir and bc for modules. Store keyed by a sha1 of the
       program args and the update timestamp.
 
-
-    - Rename loop to for?
-    - Fold for/loop (wait for syntax change?)
+    - Fold for/loop
 
     ** Change 'loop' to 'for' eg.
         - for(i in 0..10) {}
